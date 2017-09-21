@@ -7,9 +7,10 @@
 
 #ifndef SRC_WHEELMOTOR_H_
 #define SRC_WHEELMOTOR_H_
+#include <Arduino.h>
 class WheelMotor {
 private:
-	volatile uint8_t *motorPort;
+    volatile uint8_t *motorPort;
 	int startStepTime = 400; //micro sec
 	int numberOfStepsInRevolution = 200; //number of step in swing
 	int currentStepNumber = 0;   // current step count for swing

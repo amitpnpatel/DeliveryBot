@@ -7,7 +7,8 @@
 #include <Arduino.h>
 #include <WheelMotor.h>
 WheelMotor::WheelMotor(){
-	motorPort=PORTB;
+	motorPort=&PORTB;
+	DDRB|=0b11111111;
 }
 WheelMotor::WheelMotor(volatile uint8_t *_motorPort, volatile uint8_t *portAddressDDR){
 	motorPort=_motorPort;

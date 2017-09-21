@@ -7,6 +7,7 @@
 
 #ifndef SRC_CART_H_
 #define SRC_CART_H_
+#include <Arduino.h>
 #include <WheelMotor.h>
 class Cart{
 private:
