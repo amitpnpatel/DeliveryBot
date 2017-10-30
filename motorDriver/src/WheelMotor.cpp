@@ -9,9 +9,13 @@
 WheelMotor::WheelMotor(){
 	motorPort=&PORTB;
 	DDRB|=0b11111111;
+	timeCompareRegister=0;
+	motorState=false;
 }
-WheelMotor::WheelMotor(volatile uint8_t *_motorPort, volatile uint8_t *portAddressDDR){
+WheelMotor::WheelMotor(volatile uint8_t *_motorPort, volatile uint8_t *portAddressDDR,
+		 volatile uint16_t *_timeCompareRegister){
 	motorPort=_motorPort;
+	timeCompareRegister=_timeCompareRegister;
 	*portAddressDDR |= 0b11111111 ;
 }
 boolean WheelMotor::stop(){
@@ -26,6 +30,7 @@ boolean WheelMotor::start(){
 }
 void WheelMotor::moveStep(){
 	*motorPort ^= 0b00000001;
+	currentStepNumber++;
 }
 void WheelMotor::reset(){
 	 *motorPort &= 0b11111011;
@@ -49,4 +54,19 @@ void WheelMotor::setForwordDirection(){
 }
 void WheelMotor::setReverseDirection(){
 	*motorPort &= 0b11111101;
+}
+void WheelMotor::tick(){
+
+	if(motorState){
+		moveStep();
+	}
+}
+void WheelMotor::setStepCount(int step){
+	currentStepNumber=step;
+}
+int WheelMotor::getStepCount(){
+	return currentStepNumber;
+}
+void WheelMotor::setStepSpeed(int stepTime){
+	*timeCompareRegister=stepTime*2000;
 }
