@@ -17,10 +17,10 @@ private:
 	int width;
 public:
 	Cart(WheelMotor left,WheelMotor right, int wheelRadius,int width);
-	boolean moveForward(long distance);
-	boolean moveReverse(long distance);
-	boolean rotateRight(long angle);
-	boolean rotateLeft(long angle);
+	boolean moveForwardDistance(long distance);
+	boolean moveReverseDistance(long distance);
+	boolean rotateRightDistance(long angle);
+	boolean rotateLeftDistance(long angle);
 	boolean powerUpWheels();
 	boolean powerDownWheels();
 };

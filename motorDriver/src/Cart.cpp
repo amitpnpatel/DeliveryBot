@@ -14,7 +14,7 @@ Cart::Cart(WheelMotor left, WheelMotor right, int radius, int mountingWidth) {
 	wheelRadius = radius;
 	width = mountingWidth;
 }
-boolean Cart::moveForward(long distance) {
+boolean Cart::moveForwardDistance(long distance) {
 	Serial.println(distance);
 	long step = ((distance * 200) / (3.143 * wheelRadius));
 	leftWheel.setForwordDirection();
@@ -32,7 +32,7 @@ boolean Cart::moveForward(long distance) {
 	powerDownWheels();
 	return true;
 }
-boolean Cart::moveReverse(long distance) {
+boolean Cart::moveReverseDistance(long distance) {
 	long step = ((distance * 200) / (3.143 * wheelRadius));
 	leftWheel.setReverseDirection();
 	rightWheel.setReverseDirection();
@@ -49,7 +49,7 @@ boolean Cart::moveReverse(long distance) {
 	powerDownWheels();
 	return true;
 }
-boolean Cart::rotateRight(long angle) {
+boolean Cart::rotateRightDistance(long angle) {
 	long step = (angle * 5 * width) / (9 * wheelRadius);
 	leftWheel.setForwordDirection();
 	rightWheel.setReverseDirection();
@@ -63,7 +63,7 @@ boolean Cart::rotateRight(long angle) {
 	powerDownWheels();
 	return true;
 }
-boolean Cart::rotateLeft(long angle) {
+boolean Cart::rotateLeftDistance(long angle) {
 	long step = (angle * 5 * width) / (9 * wheelRadius);
 	rightWheel.setForwordDirection();
 	leftWheel.setReverseDirection();
