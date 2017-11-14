@@ -5,9 +5,10 @@
  *      Author: amitp
  */
 #include "Box.h"
-Box::Box(int centre,int inclination){
+Box::Box(int centre,int inclination,boolean state){
 	this->centre=centre;
 	this->inclination=inclination;
+	this->state=state;
 }
 void Box::setCentre(int centre){
 	this->centre=centre;
@@ -20,4 +21,10 @@ int Box::getCentre(){
 }
 int Box::getInclination(){
 	return inclination;
+}
+void Box::setState(boolean state){
+	this->state=state;
+}
+boolean Box::getState(){
+	return state;
 }

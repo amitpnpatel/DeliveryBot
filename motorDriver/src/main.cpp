@@ -12,7 +12,7 @@
 #include <Box.h>
 int wheelRadius = 47;
 int cartWidth = 270;
-Box path(50, 0);
+Box path(50, 0, true);
 WheelMotor leftWheel = WheelMotor(&PORTA, &DDRA, &OCR5A);
 WheelMotor rightWheel = WheelMotor(&PORTK, &DDRK, &OCR4A);
 Cart cart = Cart(leftWheel, rightWheel, wheelRadius, cartWidth);
@@ -61,21 +61,25 @@ byte readNextByteFromSerial1() {
 	}
 	return Serial1.read();
 }
-
 void checkSensor() {
-	while (Serial.available()) {
+	while (Serial1.available()) {
 		char inChar = readNextCharacterFromSerial1();
-		Serial.print(inChar);
 		if (inChar == 'S') {
 			inChar = readNextCharacterFromSerial1();
-			if (inChar == 'P') {
-				int centre = readNextByteFromSerial1();
-				int inclination = readNextByteFromSerial1() - 50;
+			if (inChar == 'L') {
 				inChar = readNextCharacterFromSerial1();
-				if (inChar == 'E') {
-					path.setCentre(centre);
-					path.setInclination(inclination);
+				if (inChar == 'C') {
+					boolean state = readNextByteFromSerial1();
+					int centre = readNextByteFromSerial1();
+					int inclination = readNextByteFromSerial1() - 50;
+					inChar = readNextCharacterFromSerial1();
+					if (inChar == 'E') {
+						path.setState(state);
+						path.setCentre(centre);
+						path.setInclination(inclination);
+					}
 				}
+
 			}
 		} else if (inChar == 'G') {
 
@@ -105,8 +109,9 @@ void loop() {
 //	Serial.println("turning right");
 //	leftWheel.stop();
 //	//cart.rotateRight(90);
+	checkSensor();
 	followpath();
-	delay(10);
+	delay(500);
 }
 
 int getMinIndex(int array[]) {
