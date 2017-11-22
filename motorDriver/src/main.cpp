@@ -1,9 +1,9 @@
 /*
- * main.cpp
- *
- *  Created on: Jun 23, 2017
- *      Author: amitp
- */
+* main.cpp
+*
+*  Created on: Jun 23, 2017
+*      Author: amitp
+*/
 
 #include <Arduino.h>
 #include <WheelMotor.h>
@@ -24,114 +24,97 @@ void setup() {
 boolean isSensorValid(int sensorValue[]) {
 	return true;
 }
-void followLine() {
-	int sensorValue[5];
-	sensorValue[0] = analogRead(A0);
-	sensorValue[1] = analogRead(A1);
-	sensorValue[2] = analogRead(A2);
-	sensorValue[3] = analogRead(A3);
-	sensorValue[4] = analogRead(A4);
-	//int lindIndex = getMinIndex(sensorValue);
-	int lindIndex = getMaxIndex(sensorValue);
-	if (isSensorValid(sensorValue)) {
-		Serial.print("min index");
-		Serial.println(lindIndex);
-		leftWheel.setForwordDirection();
-		rightWheel.setForwordDirection();
-		cart.powerUpWheels();
-		if (lindIndex == 2) {
+void checkSensors() {
+	path.checkSencor();
+}
+boolean correctInclination(){
+	int halfStepTime=20;
+	while (path.getInclination() > 4 || path.getInclination() < -4) {
+		if (path.getInclination() > 4) {
+			leftWheel.setForwordDirection();
+			cart.powerUpWheels();
 			leftWheel.moveStep();
-			rightWheel.moveStep();
-		} else if (lindIndex > 2) {
-			leftWheel.moveStep();
-		} else if (lindIndex < 2) {
+		} else if (path.getInclination()< -4) {
+			rightWheel.setForwordDirection();
+			cart.powerUpWheels();
 			rightWheel.moveStep();
 		}
-	} else {
-		cart.powerDownWheels();
+		delay(halfStepTime);
 	}
+	cart.powerDownWheels();
+	return true;
 }
-char readNextCharacterFromSerial1() {
-	while (Serial1.available() == 0) {
-	}
-	return (char) Serial1.read();
-}
-byte readNextByteFromSerial1() {
-	while (Serial1.available() == 0) {
-	}
-	return Serial1.read();
-}
-void checkSensor() {
-	while (Serial1.available()) {
-		char inChar = readNextCharacterFromSerial1();
-		if (inChar == 'S') {
-			inChar = readNextCharacterFromSerial1();
-			if (inChar == 'L') {
-				inChar = readNextCharacterFromSerial1();
-				if (inChar == 'C') {
-					boolean state = readNextByteFromSerial1();
-					int centre = readNextByteFromSerial1();
-					int inclination = readNextByteFromSerial1() - 50;
-					inChar = readNextCharacterFromSerial1();
-					if (inChar == 'E') {
-						path.setState(state);
-						path.setCentre(centre);
-						path.setInclination(inclination);
-					}
-				}
 
-			}
-		} else if (inChar == 'G') {
-
+int followPath() {
+	if ((path.getCentre() < 70) && (path.getCentre() > 30) && (path.getInclination() < 20) && (path.getInclination() > -20)) {
+		if((path.getInclination() < -5) && (path.getInclination() > 5)){
+			correctInclination();
 		}
-	}
-}
-void followpath() {
-	if ((path.getCentre() < 70) && (path.getCentre() > 30)
-			&& (path.getInclination() < 20) && (path.getInclination() > -20)) {
 		leftWheel.setForwordDirection();
 		rightWheel.setForwordDirection();
 		cart.powerUpWheels();
 		leftWheel.moveStep();
 		rightWheel.moveStep();
 	} else {
-		cart.powerDownWheels();
+		return getOnPath();
 	}
-}
-void loop() {
-//	Serial.println("moving fwd");
-//	leftWheel.setStepSpeed(30);
-//	leftWheel.start();
-//	rightWheel.setStepSpeed(30);
-//	rightWheel.start();
-//	//cart.moveForward(3.14*47*4);
-//	delay(5000);
-//	Serial.println("turning right");
-//	leftWheel.stop();
-//	//cart.rotateRight(90);
-	checkSensor();
-	followpath();
-	delay(500);
+	return 1;
 }
 
-int getMinIndex(int array[]) {
-	int result = 0;
-	for (int index = 1; index < 5; index++) {
-		if (array[result] > array[index]) {
-			result = index;
+int getOnPath() {
+	int result=0;
+	correctInclination();
+	int halfStepTime=20;
+	while (path.getCentre() > 55 || path.getCentre() < 45) {
+		if (path.getCentre() > 55) {
+			leftWheel.setForwordDirection();
+			rightWheel.setForwordDirection();
+			cart.powerUpWheels();
+			for (int turnstep = 0; turnstep < 4; turnstep++) {
+				leftWheel.moveStep();
+				delay(halfStepTime);
+			}
+			correctInclination();
+		} else if (path.getCentre() < 45) {
+			rightWheel.setForwordDirection();
+			cart.powerUpWheels();
+			for (int turnstep = 0; turnstep < 4; turnstep++) {
+				rightWheel.moveStep();
+				delay(halfStepTime);
+			}
+			correctInclination();
 		}
+		path.waitTillNextUpdate();
+		path.waitTillNextUpdate();
+		result+=2;
 	}
+	cart.powerDownWheels();
 	return result;
 }
-int getMaxIndex(int array[]) {
-	int result = 0;
-	for (int index = 1; index < 5; index++) {
-		if (array[result] < array[index]) {
-			result = index;
+void loop() {
+	delay(5000);
+	Serial.println("moving fwd");
+	for(int index=0;index<6;index++){
+		if (moveOneBlockForward()) {
+			Serial.println("moved 1 block");
+		} else {
+			Serial.println("lost path");
 		}
+		delay(1000);
 	}
-	return result;
 }
+boolean moveOneBlockForward() {
+	for (int step = 0; step < 800; step++) {
+		int stepMoved=followPath();
+		if (stepMoved>1) {
+			step+=(stepMoved-1);
+		}
+		delay(15);
+	}
+	cart.powerDownWheels();
+	return true;
+}
+
 void setupTimmerForInterrupts() {
 	// initialize timer1 interupt at every 1000micro sec or 1 milli sec
 	//set timer1 interrupt at 1000Hz

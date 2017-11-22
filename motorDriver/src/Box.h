@@ -13,6 +13,7 @@ private:
 	int centre;
 	int inclination;
 	boolean state;
+	boolean updateState;
 public:
 	Box(int centre,int inclination,boolean state);
 	void setCentre(int centre);
@@ -21,6 +22,9 @@ public:
 	int getInclination();
 	void setState(boolean state);
 	boolean getState();
+	void setParams(boolean state,int centre,int inclination);
+	boolean waitTillNextUpdate();
+	void checkSencor();
 };
 
 #endif /* SRC_BOX_H_ */

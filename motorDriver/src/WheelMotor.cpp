@@ -17,6 +17,7 @@ WheelMotor::WheelMotor(volatile uint8_t *_motorPort, volatile uint8_t *portAddre
 	motorPort=_motorPort;
 	timeCompareRegister=_timeCompareRegister;
 	*portAddressDDR |= 0b11111111 ;
+	powerDown();
 }
 boolean WheelMotor::stop(){
 	motorState = false;
