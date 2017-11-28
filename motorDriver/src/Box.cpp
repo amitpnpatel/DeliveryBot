@@ -1,14 +1,15 @@
 /*
- * Box.cpp
- *
- *  Created on: Nov 6, 2017
- *      Author: amitp
- */
+* Box.cpp
+*
+*  Created on: Nov 6, 2017
+*      Author: amitp
+*/
 #include "Box.h"
-Box::Box(int centre,int inclination,boolean state){
+Box::Box(int centre,int inclination,boolean state,boolean onMarker){
 	this->centre=centre;
 	this->inclination=inclination;
 	this->state=state;
+	this->onMarker=onMarker;
 	this->updateState=false;
 }
 void Box::setCentre(int centre){
@@ -18,24 +19,34 @@ void Box::setInclination(int inclination){
 	this->inclination=inclination;
 }
 int Box::getCentre(){
-	checkSencor();
+	checkSensor();
 	return centre;
 }
 int Box::getInclination(){
-	checkSencor();
+	checkSensor();
 	return inclination;
 }
 void Box::setState(boolean state){
+	checkSensor();
 	this->state=state;
 }
 boolean Box::getState(){
-	checkSencor();
+	checkSensor();
 	return state;
 }
-void Box::setParams(boolean state,int centre,int inclination){
+void Box::setOnMarker(boolean mark){
+	checkSensor();
+	this->onMarker=mark;
+}
+boolean Box::isOnMarker(){
+	checkSensor();
+	return onMarker;
+}
+void Box::setParams(boolean state,int centre,int inclination,boolean onMark){
 	setState(state);
 	setCentre(centre);
 	setInclination(inclination);
+	setOnMarker(onMark);
 	this->updateState=true;
 }
 boolean Box::waitTillNextUpdate(){
@@ -47,7 +58,7 @@ boolean Box::waitTillNextUpdate(){
 		}
 		counter++;
 		delay(10);
-		checkSencor();
+		checkSensor();
 	}
 	return true;
 }
@@ -61,25 +72,24 @@ byte readNextByteFromSerial1() {
 	}
 	return Serial1.read();
 }
-void Box::checkSencor(){
+void Box::checkSensor(){
 	while (Serial1.available()) {
-	char inChar = readNextCharacterFromSerial1();
-	if (inChar == 'S') {
-		inChar = readNextCharacterFromSerial1();
-		if (inChar == 'L') {
+		char inChar = readNextCharacterFromSerial1();
+		if (inChar == 'S') {
 			inChar = readNextCharacterFromSerial1();
-			if (inChar == 'C') {
-				boolean state = readNextByteFromSerial1();
-				int centre = readNextByteFromSerial1();
-				int inclination = readNextByteFromSerial1();
+			if (inChar == 'L') {
 				inChar = readNextCharacterFromSerial1();
-				if (inChar == 'E') {
-					setParams(state,centre,inclination - 50);
+				if (inChar == 'C') {
+					boolean state = readNextByteFromSerial1();
+					int centre = readNextByteFromSerial1();
+					int inclination = readNextByteFromSerial1();
+					boolean onMark = readNextByteFromSerial1();
+					inChar = readNextCharacterFromSerial1();
+					if (inChar == 'E') {
+						setParams(state,centre,inclination - 50,onMark);
+					}
 				}
-
 			}
-
 		}
 	}
-}
 }

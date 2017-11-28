@@ -4,7 +4,7 @@
 *  Created on: Jun 23, 2017
 *      Author: amitp
 */
-
+#ifndef UNIT_TEST
 #include <Arduino.h>
 #include <WheelMotor.h>
 #include <Cart.h>
@@ -12,7 +12,7 @@
 #include <Box.h>
 int wheelRadius = 47;
 int cartWidth = 270;
-Box path(50, 0, true);
+Box path(50, 0, true,false);
 WheelMotor leftWheel = WheelMotor(&PORTA, &DDRA, &OCR5A);
 WheelMotor rightWheel = WheelMotor(&PORTK, &DDRK, &OCR4A);
 Cart cart = Cart(leftWheel, rightWheel, wheelRadius, cartWidth);
@@ -25,10 +25,10 @@ boolean isSensorValid(int sensorValue[]) {
 	return true;
 }
 void checkSensors() {
-	path.checkSencor();
+	path.checkSensor();
 }
 boolean correctInclination(){
-	int halfStepTime=20;
+	int halfStepTime=15;
 	while (path.getInclination() > 4 || path.getInclination() < -4) {
 		if (path.getInclination() > 4) {
 			leftWheel.setForwordDirection();
@@ -46,8 +46,8 @@ boolean correctInclination(){
 }
 
 int followPath() {
-	if ((path.getCentre() < 70) && (path.getCentre() > 30) && (path.getInclination() < 20) && (path.getInclination() > -20)) {
-		if((path.getInclination() < -5) && (path.getInclination() > 5)){
+	if ((path.getCentre() < 60) && (path.getCentre() > 40) && (path.getInclination() < 10) && (path.getInclination() > -10)) {
+		if((path.getInclination() < -4) && (path.getInclination() > 4)){
 			correctInclination();
 		}
 		leftWheel.setForwordDirection();
@@ -64,13 +64,17 @@ int followPath() {
 int getOnPath() {
 	int result=0;
 	correctInclination();
-	int halfStepTime=20;
+	int halfStepTime=15;
 	while (path.getCentre() > 55 || path.getCentre() < 45) {
 		if (path.getCentre() > 55) {
 			leftWheel.setForwordDirection();
 			rightWheel.setForwordDirection();
 			cart.powerUpWheels();
-			for (int turnstep = 0; turnstep < 4; turnstep++) {
+			int correctionStep=(path.getCentre()-50)/2;
+			if(correctionStep<8){
+				correctionStep=8;
+			}
+			for (int turnstep = 0; turnstep < 8; turnstep++) {
 				leftWheel.moveStep();
 				delay(halfStepTime);
 			}
@@ -78,13 +82,16 @@ int getOnPath() {
 		} else if (path.getCentre() < 45) {
 			rightWheel.setForwordDirection();
 			cart.powerUpWheels();
-			for (int turnstep = 0; turnstep < 4; turnstep++) {
+			int correctionStep=(50-path.getCentre())/2;
+			if(correctionStep<8){
+				correctionStep=8;
+			}
+			for (int turnstep = 0; turnstep < 8; turnstep++) {
 				rightWheel.moveStep();
 				delay(halfStepTime);
 			}
 			correctInclination();
 		}
-		path.waitTillNextUpdate();
 		path.waitTillNextUpdate();
 		result+=2;
 	}
@@ -95,16 +102,83 @@ void loop() {
 	delay(5000);
 	Serial.println("moving fwd");
 	for(int index=0;index<6;index++){
-		if (moveOneBlockForward()) {
-			Serial.println("moved 1 block");
+		if (moveToNextMarker()) {
+			if(turnReverse()){
+				moveToNextMarker();
+			}
+			Serial.println("moved 1 marker");
 		} else {
 			Serial.println("lost path");
 		}
-		delay(1000);
+		delay(10000);
 	}
+}
+boolean turnLeft(){
+	for (int step = 0; step < 1200; step++) {
+		if(step>400){
+			if(path.getState()){
+				if((path.getInclination() > -8) && (path.getInclination() < 8)){
+					getOnPath();
+					cart.powerDownWheels();
+					return true;
+				}
+			}
+		}
+		leftWheel.setForwordDirection();
+		rightWheel.setForwordDirection();
+		cart.powerUpWheels();
+		rightWheel.moveStep();
+		delay(15);
+	}
+	cart.powerDownWheels();
+	return false;
+}
+boolean turnReverse(){
+	for (int step = 0; step < 1000; step++) {
+		if(step>600){
+			if(path.getState()){
+				if((path.getInclination() > -8) && (path.getInclination() < 8)){
+					getOnPath();
+					cart.powerDownWheels();
+					return true;
+				}
+			}
+		}
+		leftWheel.setForwordDirection();
+		rightWheel.setReverseDirection();
+		cart.powerUpWheels();
+		leftWheel.moveStep();
+		rightWheel.moveStep();
+		delay(15);
+	}
+	cart.powerDownWheels();
+	return false;
+}
+boolean turnRight(){
+	for (int step = 0; step < 1200; step++) {
+		if(step>400){
+			if(path.getState()){
+				if((path.getInclination() > -8) && (path.getInclination() < 8)){
+					getOnPath();
+					cart.powerDownWheels();
+					return true;
+				}
+			}
+		}
+		leftWheel.setForwordDirection();
+		rightWheel.setForwordDirection();
+		cart.powerUpWheels();
+		leftWheel.moveStep();
+		delay(15);
+	}
+	cart.powerDownWheels();
+	return false;
 }
 boolean moveOneBlockForward() {
 	for (int step = 0; step < 800; step++) {
+		if(!path.getState()){
+			continue;
+		}
 		int stepMoved=followPath();
 		if (stepMoved>1) {
 			step+=(stepMoved-1);
@@ -114,7 +188,36 @@ boolean moveOneBlockForward() {
 	cart.powerDownWheels();
 	return true;
 }
-
+boolean moveToNextMarker(){
+	boolean oldMarkerState=true;
+	getOnPath();
+	for (int step = 0; step < 2000; step++) {
+		if(!path.getState()){
+			path.waitTillNextUpdate();
+			if(!path.getState()){
+				cart.powerDownWheels();
+				return false;
+			}
+		}
+		if(path.isOnMarker()){
+			if(step>50 && (!oldMarkerState)){
+				correctInclination();
+				cart.powerDownWheels();
+				return true;
+			}
+		}else{
+			oldMarkerState=false;
+		}
+		int stepMoved=followPath();
+		if (stepMoved>1) {
+			step+=(stepMoved-1);
+		}
+		delay(15);
+	}
+	correctInclination();
+	cart.powerDownWheels();
+	return false;
+}
 void setupTimmerForInterrupts() {
 	// initialize timer1 interupt at every 1000micro sec or 1 milli sec
 	//set timer1 interrupt at 1000Hz
@@ -165,3 +268,4 @@ ISR(TIMER4_COMPA_vect) {
 ISR(TIMER5_COMPA_vect) {
 	leftWheel.tick();
 }
+#endif
